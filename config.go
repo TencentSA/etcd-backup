@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/TencentSA/etcd-backup/version"
 	"log"
 	"os"
 )
@@ -60,7 +61,15 @@ func parseCommandLineOptions() (*string, *Config) {
 	dumpFilePath := flag.String("file", "etcd-dump.json", "Location of the etcd dump file")
 	backupStrategy := &BackupStrategy{[]string{"/"}, true, true}
 
+	v := flag.Bool("v", false, "print version and exit")
+
 	flag.Parse()
+
+	if *v {
+		fmt.Fprintln(os.Stderr, version.VERSION)
+		os.Exit(0)
+	}
+
 	return configPath, &Config{
 		ConcurrentRequests: *ConcurrentRequests,
 		Retries:            *retries,
