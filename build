@@ -1,0 +1,38 @@
+#!/bin/bash -e
+
+function linker_dashX {
+	local version=$(go version)
+	local regex="go([0-9]+).([0-9]+)."
+	if [[ $version =~ $regex ]]; then
+		if [ ${BASH_REMATCH[1]} -eq "1" -a ${BASH_REMATCH[2]} -le "4" ]; then
+			echo "$1 \"$2\""
+		else
+			echo "$1=$2"
+		fi
+	else
+		echo "could not determine Go version"
+		exit 1
+	fi
+}
+
+ORG_PATH="github.com/TencentSA"
+REPO_PATH="${ORG_PATH}/etcd-backup"
+VERSION=$(git describe --dirty)
+GLDFLAGS="-X $(linker_dashX github.com/TencentSA/etcd-backup/version.VERSION ${VERSION})"
+
+if [ ! -h gopath/src/${REPO_PATH} ]; then
+	mkdir -p gopath/src/${ORG_PATH}
+	ln -s ../../../.. gopath/src/${REPO_PATH} || exit 255
+fi
+
+export GOBIN=${PWD}/bin
+export GOPATH=${PWD}/gopath:${PWD}/vendor
+
+eval $(go env)
+
+if [ ${GOOS} = "linux" ]; then
+	echo "Building etcd-backup..."
+	go build -o ${GOBIN}/etcd-backup -ldflags "${GLDFLAGS}" ${REPO_PATH}
+else
+	echo "Not on Linux - skipping etcd-backup build"
+fi
